@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>canvas画版</title>
+    <!-- <link rel="stylesheet" href="css/index.css"> -->
+    <style>
+        * {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+        }
+
+        .drawBoard {
+            margin: 30px;
+        }
+
+        #cavs {
+            border: 1px solid red;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+        }
+
+        .drawBoard ul {
+            margin-top: 20px;
+            width: 700px;
+            text-align: center;
+        }
+
+        .drawBoard ul li {
+            display: inline-block;
+            /* float: left; */
+            margin-left: 35px;
+        }
+
+        .drawBoard ul li input {
+            padding: 6px 15px;
+            border-radius: 10px;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            transition: box-shadow 0.1s cubic-bezier(0.6, -0.28, 0.735, 0.045);
+        }
+
+        .drawBoard ul li:nth-child(5) input {
+            vertical-align: bottom;
+        }
+
+        .drawBoard ul li input:hover {
+            /* border: 1px solid yellowgreen; */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="drawBoard">
+        <!-- <p style="margin-bottom: 10px;">开始绘画:</p> -->
+        <canvas id="cavs" width="700" height="330"></canvas>
+        <ul>
+            <li><input type="color" id="color"></li>
+            <li><input type="button" id="cleanBoard" value='清屏'></li>
+            <li><input type="button" id="eraser" value='橡皮'></li>
+            <li><input type="button" id="rescind" value="撤销"></li>
+            <li><input type="range" id="lineRuler" value="线条粗细" min='1' max='20'></li>
+            <li><input type="button" id="save" value="保存"></li>
+        </ul>
+        <p style="margin-top: 50px;">绘画结果：</p>
+        <img src="" id="img" alt="" width="350px">
+    </div>
+    <script>
+        /***
+     * 
+     * canvas  实现画板功能
+     * 
+     */
+        var drawingBoard = {
+            cavs: document.getElementById('cavs'),
+            ctx: document.getElementById('cavs').getContext('2d'),
+            ulNode: document.getElementsByTagName('ul')[0],
+            colorBtn: document.getElementById('color'),
+            lineRuler: document.getElementById('lineRuler'),
+            imgArr: [],
+            init: function () {
+                this.ctx.lineCap = 'round'; //线条起始和结尾样式
+                this.ctx.lineJoin = 'round'; //转弯
+                this.drawing();
+                // console.log(this.ctx);
+                
+                this.btnsFnAll();
+            },
+            drawing: function () {
+                var self = this;
+                var left = this.cavs.offsetLeft;
+                this.cavs.onmousedown = function (e) {
+                    var e_x = e.pageX;
+                    var e_y = e.pageY;
+                    self.ctx.beginPath();
+                    self.ctx.moveTo(e_x - left, e_y - left);
+                    var img = self.ctx.getImageData(0, 0, self.cavs.offsetWidth, cavs.offsetHeight);//getImageData() 复制画布上指定矩形的像素数据，然后通过 putImageData() 将图像数据放回画布
+                    self.imgArr.push(img);
+                    document.onmousemove = function (e) {
+                        self.ctx.lineTo(e.pageX - left, e.pageY - left);
+                        self.ctx.stroke();
+                    }
+                    document.onmouseup = function () {
+                        this.onmousemove = null;
+                        self.ctx.closePath();
+                    }
+                    this.onmouseleave = function () {
+                        this.onmousemove = null;
+                    }
+                }
+            },
+            btnsFnAll: function () {
+                var self = this;
+                this.ulNode.addEventListener('click', function (e) {
+                    console.log(e.target.id);
+                    switch (e.target.id) {
+                        case "cleanBoard":
+                            //清屏
+                            self.ctx.clearRect(0, 0, self.cavs.offsetWidth, cavs.offsetHeight)
+                            break;
+                        case "eraser":
+                            //橡皮
+                            self.ctx.strokeStyle = "#ffffff";
+                            break;
+                        case "save":
+                            //保存
+                            var img = document.getElementById('img')
+                            // var newImg = document.createElement("img");
+                            img.src = self.cavs.toDataURL();
+                            break;
+                        case "rescind":
+                            //撤销
+                            console.log(self.imgArr, '====self.imgArr')
+                            if (self.imgArr.length > 0) {
+                                self.ctx.putImageData(self.imgArr.pop(), 0, 0);
+                            }
+                            break;
+                    }
+                });
+                this.colorBtn.onchange = function () {
+                    self.ctx.strokeStyle = this.value;
+                }
+                this.lineRuler.onchange = function () {
+                    self.ctx.lineWidth = this.value;
+                }
+            }
+        }
+
+        drawingBoard.init();
+    </script>
+</body>
+
+</html>
